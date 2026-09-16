@@ -3,7 +3,7 @@ import { task, executionLog } from '@/db/schema';
 import { ExecutionForm } from './ExecutionForm';
 import { CompleteButton } from './CompleteButton';
 import { DeleteTaskButton } from './DeleteTaskButton';
-
+import { Prompt } from './Prompt';
 
 type Task = InferSelectModel<typeof task>;
 type Execution = InferSelectModel<typeof executionLog>;
@@ -31,40 +31,57 @@ export function TaskItem({ task: t, executions }: Props) {
   const isDone = t.completedAt !== null;
   const totalActual = executions.reduce((sum, e) => sum + e.durationMinutes, 0);
   const hasBlocked = executions.some((e) => e.blockedReason);
+  const isOver = !isDone && t.dueAt && new Date(t.dueAt) < new Date();
 
   return (
-    <li className="rounded-lg border p-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <h3 className={`font-medium ${isDone ? 'line-through text-muted-foreground' : ''}`}>
-          {t.title}
-        </h3>
-        <span className="shrink-0 font-mono text-xs text-muted-foreground">
-          {isDone ? '완료' : '진행 중'}
+    <li className="border-b border-border py-4">
+      <div className="grid grid-cols-[auto_1fr_auto] items-baseline gap-3">
+        {/* 상태 체크박스 */}
+        <span
+          className={`font-mono text-sm ${
+            isDone ? 'text-brand' : isOver ? 'text-amber-400' : 'text-muted-foreground'
+          }`}
+          aria-label={isDone ? '완료' : isOver ? '지연' : '진행 중'}
+        >
+          {isDone ? '[✓]' : isOver ? '[!]' : '[ ]'}
         </span>
-      </div>
 
-      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-muted-foreground">
-        {t.dueAt && <span>마감 {formatKst(t.dueAt)}</span>}
-        <span>예상 {t.estimatedMinutes}분</span>
-        <span>실제 {totalActual}분</span>
-        {hasBlocked && (
-          <span className="text-destructive">막힘 있음</span>
-        )}
+        <span className="min-w-0">
+          <h3
+            className={`truncate font-medium ${
+              isDone ? 'text-muted-foreground line-through' : ''
+            }`}
+          >
+            {t.title}
+          </h3>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 font-mono text-xs text-muted-foreground tabular-nums">
+            {t.dueAt && <span>마감 {formatKst(t.dueAt)}</span>}
+            <span>예상 {t.estimatedMinutes}분</span>
+            <span>실제 {totalActual}분</span>
+            {hasBlocked && <span className="text-destructive">막힘 있음</span>}
+          </div>
+        </span>
+
+        <div className="flex items-center gap-1">
+          <CompleteButton taskId={t.id} completed={isDone} />
+          <DeleteTaskButton taskId={t.id} taskTitle={t.title} />
+        </div>
       </div>
 
       {executions.length > 0 && (
-        <ol className="mt-3 flex flex-col gap-1.5 border-l-2 border-muted pl-3">
+        <ol className="mt-3 ml-8 flex flex-col gap-1 border-l border-border pl-3">
           {executions.map((e) => (
-            <li key={e.id} className="text-xs">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-muted-foreground">
+            <li key={e.id} className="font-mono text-xs">
+              <div className="grid grid-cols-[1fr_auto] items-baseline gap-2">
+                <span className="text-muted-foreground tabular-nums">
                   {formatKst(e.startedAt)} ~ {formatKst(e.endedAt)}
                 </span>
-                <span className="shrink-0 font-mono">{e.durationMinutes}분</span>
+                <span className="shrink-0 tabular-nums">{e.durationMinutes}분</span>
               </div>
               {e.blockedReason && (
                 <p className="mt-0.5 text-destructive">
-                  막힘: {e.blockedReason}
+                  <Prompt className="text-destructive">! </Prompt>
+                  {e.blockedReason}
                 </p>
               )}
             </li>
@@ -72,12 +89,8 @@ export function TaskItem({ task: t, executions }: Props) {
         </ol>
       )}
 
-      <div className="mt-3 flex items-center justify-between gap-2">
+      <div className="mt-3 ml-8">
         <ExecutionForm taskId={t.id} />
-          <div className="flex items-center gap-1">
-            <CompleteButton taskId={t.id} completed={isDone} />
-            <DeleteTaskButton taskId={t.id} taskTitle={t.title} />
-          </div>
       </div>
     </li>
   );

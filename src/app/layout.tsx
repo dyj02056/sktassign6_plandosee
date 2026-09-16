@@ -16,17 +16,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Plan, Do, See",
-  description: "Plan & Execution Diary",
+  title: "플랜두씨 다이어리",
+  description: "계획과 실제를 담는 다이어리",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ko"
-      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-mono", jetbrainsMono.variable)}
+      className={cn(
+        "dark",
+        "h-full",
+        "antialiased",
+        geistSans.variable,
+        geistMono.variable,
+        "font-mono",
+        jetbrainsMono.variable
+      )}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        {children}
+      </body>
     </html>
   );
 }

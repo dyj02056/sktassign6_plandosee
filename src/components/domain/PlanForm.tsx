@@ -123,7 +123,7 @@ export function PlanForm({ initial, mode, planId }: Props) {
           id="priority"
           value={values.priority}
           onChange={(e) => update('priority', e.target.value as PlanFormValues['priority'])}
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          className="h-9 rounded-md border border-input bg-input-bg px-3 text-sm"
         >
           {PRIORITY_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>

@@ -1,69 +1,73 @@
 import Link from 'next/link';
 import { db } from '@/db';
 import { plan } from '@/db/schema';
-import { Plus } from '@phosphor-icons/react/dist/ssr';
-import { Button } from '@/components/ui/button';
 import { desc, isNull } from 'drizzle-orm';
+import { Button } from '@/components/ui/button';
+import { Prompt, SectionTitle } from '@/components/domain/Prompt';
 
-
-
-const priorityLabel: Record<string, string> = {
-  low: '낮음',
-  medium: '보통',
-  high: '높음',
+const PRIORITY_LABEL: Record<string, string> = {
+  low: 'low',
+  medium: 'med',
+  high: 'high',
 };
 
 export default async function PlansPage() {
   const rows = await db
-  .select()
-  .from(plan)
-  .where(isNull(plan.deletedAt))
-  .orderBy(desc(plan.createdAt));
-  
+    .select()
+    .from(plan)
+    .where(isNull(plan.deletedAt))
+    .orderBy(desc(plan.createdAt));
+
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-10">
-      <header className="mb-8 flex items-center justify-between">
+    <main className="mx-auto w-full max-w-3xl px-4 py-12">
+      <header className="mb-6">
+        <Link
+          href="/"
+          className="font-mono text-xs text-muted-foreground transition-colors hover:text-brand"
+        >
+          ← home
+        </Link>
+      </header>
+
+      <header className="mb-8 flex items-baseline justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">계획</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {rows.length}개의 계획
+          <SectionTitle className="text-base">plans</SectionTitle>
+          <p className="mt-1 font-mono text-xs text-muted-foreground tabular-nums">
+            총 {rows.length}개
           </p>
         </div>
         <Button asChild size="sm">
-          <Link href="/plans/new">
-            <Plus size={16} weight="bold" />
-            새 계획
-          </Link>
+          <Link href="/plans/new">+ 새 계획</Link>
         </Button>
       </header>
 
       {rows.length === 0 ? (
-        <div className="rounded-lg border border-dashed py-16 text-center">
-          <p className="text-sm text-muted-foreground">
-            아직 계획이 없습니다. 첫 계획을 세워보세요.
+        <div className="border border-dashed border-border py-16 text-center">
+          <p className="font-mono text-sm text-muted-foreground">
+            아직 계획이 없습니다.
           </p>
+          <Button asChild variant="outline" size="sm" className="mt-4">
+            <Link href="/plans/new">+ 첫 계획 만들기</Link>
+          </Button>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="divide-y divide-border border-y border-border">
           {rows.map((p) => (
             <li key={p.id}>
               <Link
                 href={`/plans/${p.id}`}
-                className="block rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+                className="grid grid-cols-[1fr_auto_auto] items-baseline gap-4 py-3.5 transition-colors hover:bg-accent/50"
               >
-                <div className="flex items-baseline justify-between gap-3">
-                  <h2 className="font-medium">{p.title}</h2>
-                  <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                    {priorityLabel[p.priority] ?? p.priority}
-                  </span>
-                </div>
-                <div className="mt-1.5 flex items-center gap-3 font-mono text-xs text-muted-foreground">
-                  <span>
-                    {p.periodStart} ~ {p.periodEnd}
-                  </span>
-                  <span aria-hidden>·</span>
-                  <span>{p.estimatedMinutes}분</span>
-                </div>
+                <span className="truncate">
+                  <Prompt className="text-muted-foreground">▸ </Prompt>
+                  <span className="font-medium">{p.title}</span>
+                </span>
+                <span className="shrink-0 font-mono text-xs text-brand tabular-nums">
+                  [{PRIORITY_LABEL[p.priority] ?? p.priority}]
+                </span>
+                <span className="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">
+                  {p.periodStart} ~ {p.periodEnd}
+                </span>
               </Link>
             </li>
           ))}

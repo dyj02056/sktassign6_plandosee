@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from '@phosphor-icons/react/dist/ssr';
 import { db } from '@/db';
 import { plan, planRevision } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
@@ -10,7 +9,7 @@ import { RevisionList } from '@/components/domain/RevisionList';
 import { TaskList } from '@/components/domain/TaskList';
 import { ReviewTab } from '@/components/domain/ReviewTab';
 import { DeletePlanButton } from '@/components/domain/DeletePlanButton';
-
+import { Prompt, SectionTitle } from '@/components/domain/Prompt';
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -21,7 +20,7 @@ export default async function PlanDetailPage({ params }: Props) {
 
   const [planRow] = await db.select().from(plan).where(eq(plan.id, id));
 
-  if (!planRow) {
+  if (!planRow || planRow.deletedAt) {
     notFound();
   }
 
@@ -32,30 +31,43 @@ export default async function PlanDetailPage({ params }: Props) {
     .orderBy(desc(planRevision.revisedAt));
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-10">
+    <main className="mx-auto w-full max-w-3xl px-4 py-12">
       <header className="mb-6">
         <Link
-          href="/plans"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          href="/"
+          className="font-mono text-xs text-muted-foreground transition-colors hover:text-brand"
         >
-          <ArrowLeft size={14} />
-          계획 목록
+          ← home
+        </Link>
+      </header>
+      <header className="mb-8">
+        <Link
+          href="/plans"
+          className="font-mono text-xs text-muted-foreground transition-colors hover:text-brand"
+        >
+          ← /plans
         </Link>
       </header>
 
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {planRow.title}
-        </h1>
+      <div className="mb-8 flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-mono text-xs text-muted-foreground">
+            <Prompt>$ </Prompt>
+            cat plan:{planRow.id.slice(0, 8)}
+          </div>
+          <h1 className="mt-2 truncate text-2xl font-semibold tracking-tight">
+            {planRow.title}
+          </h1>
+        </div>
         <DeletePlanButton planId={planRow.id} planTitle={planRow.title} />
       </div>
 
       <PlanTabs
         revisionCount={revisions.length}
         currentContent={
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-10">
             <section>
-              <h2 className="mb-4 text-sm font-medium">계획</h2>
+              <SectionTitle className="mb-4">계획</SectionTitle>
               <PlanForm
                 mode="edit"
                 planId={planRow.id}
@@ -79,3 +91,4 @@ export default async function PlanDetailPage({ params }: Props) {
     </main>
   );
 }
+
