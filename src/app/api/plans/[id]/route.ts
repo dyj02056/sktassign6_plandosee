@@ -3,6 +3,9 @@ import { db } from '@/db';
 import { plan, planRevision } from '@/db/schema';
 import { planInputSchema } from '@/lib/validate';
 import { eq } from 'drizzle-orm';
+import { and, isNull } from 'drizzle-orm';
+import { task } from '@/db/schema';
+
 
 // GET /api/plans/[id] — 계획 상세
 export async function GET(
@@ -91,5 +94,45 @@ export async function PUT(
   } catch (error) {
     console.error('[PUT /api/plans/[id]]', error);
     return NextResponse.json({ error: '계획을 수정하지 못했습니다' }, { status: 500 });
+  }
+}
+
+// DELETE /api/plans/[id] — soft delete (Plan + Task cascade soft)
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // UUID 형식 검증
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(id)) {
+      return NextResponse.json({ error: '유효하지 않은 계획 ID입니다' }, { status: 400 });
+    }
+
+    const [current] = await db.select().from(plan).where(eq(plan.id, id));
+    if (!current || current.deletedAt) {
+      return NextResponse.json({ error: '계획을 찾을 수 없습니다' }, { status: 404 });
+    }
+
+    const now = new Date();
+
+    // 1. Plan soft delete
+    await db.update(plan).set({ deletedAt: now }).where(eq(plan.id, id));
+
+    // 2. 그 Plan의 Task도 soft delete (cascade soft delete)
+    //    → 집계에서 자동 제외 (Task.deletedAt IS NULL 조건이 이미 있음)
+    await db
+      .update(task)
+      .set({ deletedAt: now })
+      .where(and(eq(task.planId, id), isNull(task.deletedAt)));
+
+    // 3. 결과 반환
+    const [result] = await db.select().from(plan).where(eq(plan.id, id));
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('[DELETE /api/plans/[id]]', error);
+    return NextResponse.json({ error: '계획을 삭제하지 못했습니다' }, { status: 500 });
   }
 }

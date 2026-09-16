@@ -23,6 +23,7 @@ export const plan = pgTable('plan', {
   estimatedMinutes: integer('estimated_minutes').notNull(), // T06-C07
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }), // ★ 추가 (soft delete)
 });
 
 // PlanRevision — 수정 이력 (Q4 확정, T06-C08)

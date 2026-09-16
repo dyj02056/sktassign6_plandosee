@@ -6,10 +6,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 type Props = {
   currentContent: ReactNode;
   revisionContent: ReactNode;
+  reviewContent: ReactNode;
   revisionCount: number;
 };
 
-export function PlanTabs({ currentContent, revisionContent, revisionCount }: Props) {
+export function PlanTabs({
+  currentContent,
+  revisionContent,
+  reviewContent,
+  revisionCount,
+}: Props) {
   return (
     <Tabs defaultValue="current" className="w-full">
       <TabsList>
@@ -17,12 +23,16 @@ export function PlanTabs({ currentContent, revisionContent, revisionCount }: Pro
         <TabsTrigger value="revisions">
           수정 이력{revisionCount > 0 ? ` (${revisionCount})` : ''}
         </TabsTrigger>
+        <TabsTrigger value="review">돌아보기</TabsTrigger>
       </TabsList>
       <TabsContent value="current" className="mt-6">
         {currentContent}
       </TabsContent>
       <TabsContent value="revisions" className="mt-6">
         {revisionContent}
+      </TabsContent>
+      <TabsContent value="review" className="mt-6">
+        {reviewContent}
       </TabsContent>
     </Tabs>
   );

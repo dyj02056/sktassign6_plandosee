@@ -8,6 +8,9 @@ import { PlanForm } from '@/components/domain/PlanForm';
 import { PlanTabs } from '@/components/domain/PlanTabs';
 import { RevisionList } from '@/components/domain/RevisionList';
 import { TaskList } from '@/components/domain/TaskList';
+import { ReviewTab } from '@/components/domain/ReviewTab';
+import { DeletePlanButton } from '@/components/domain/DeletePlanButton';
+
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -40,9 +43,12 @@ export default async function PlanDetailPage({ params }: Props) {
         </Link>
       </header>
 
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">
-        {planRow.title}
-      </h1>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {planRow.title}
+        </h1>
+        <DeletePlanButton planId={planRow.id} planTitle={planRow.title} />
+      </div>
 
       <PlanTabs
         revisionCount={revisions.length}
@@ -68,6 +74,7 @@ export default async function PlanDetailPage({ params }: Props) {
           </div>
         }
         revisionContent={<RevisionList revisions={revisions} />}
+        reviewContent={<ReviewTab planId={planRow.id} />}
       />
     </main>
   );

@@ -254,6 +254,98 @@ Q1~Q9 확정. 위 2절 참조.
 - **`planId`는 Task 수정 대상 아님**
 - **N+1 회피:** TaskList에서 `inArray`로 실행 기록을 한 번에 로드
 
+### P3 — 카드 3: 실제로 한 일 적기 (완료 ✅, C22는 P4에서)
+
+**목표:** T06-C21, C22, C23~C27
+
+| 작업 | 상태 |
+|------|------|
+| P3-1: `src/app/api/tasks/[id]/complete/route.ts` (조건부 UPDATE) | ✅ |
+| P3-2: `src/components/domain/CompleteButton.tsx` | ✅ |
+| P3-3: `src/components/domain/TaskItem.tsx` 수정 (완료 버튼 삽입) | ✅ |
+| P3-4: C21 멱등 테스트 | ✅ |
+| P3-5: C27 검증 | ✅ |
+
+**검증 완료:**
+- **T06-C21:** API 직접 두 번 호출 → 둘 다 200 OK, `completedAt` 첫 번째 시각 그대로 (덮어쓰지 않음)
+  - 조건부 UPDATE: `WHERE id = ? AND completed_at IS NULL`
+  - 두 번째 요청은 0행 변경 → 멱등
+- **T06-C23~C26:** P2에서 이미 검증 (실행 기록 4개 필드 저장)
+- **T06-C27:** Plan 조회 → 실행 기록 추가 → Plan 재조회 → 값 완전 동일 (updatedAt 포함)
+- **T06-C22:** P4(돌아보기)에서 검증 예정
+
+**설계 결정 기록:**
+- **완료 멱등의 보장 지점:** 서버의 조건부 UPDATE. 버튼 잠금은 UX일 뿐 (카드3 "버튼 잠금만으로는 불통과" 준수)
+- **UUID 형식 검증 추가:** 무효한 UUID가 오면 400 반환 (500 아님). `complete/route.ts`에 정규식 검증
+- **첫 500 에러의 정체:** 템플릿 문구 `여기에_TASK_ID`를 실제 ID로 안 바꾼 잘못된 명령이 원인. API 자체는 정상
+
+### P4 — 카드 4: 돌아보기, 그리고 다음 계획으로 (완료 ✅)
+
+**목표:** C28~C33, C83, C22
+
+| 작업 | 상태 |
+|------|------|
+| P4-1: `src/lib/aggregate.ts` (집계 함수) | ✅ |
+| P4-2: `tests/aggregate.test.ts`, `idempotency.test.ts`, `kst-boundary.test.ts` | ✅ 24/24 통과 |
+| P4-2: `vitest.config.ts` | ✅ |
+| P4-3: `src/app/api/review/route.ts` (집계 API) | ✅ |
+| P4-4: `src/app/review/page.tsx` + `AggregateGrid.tsx` | ✅ |
+| P4-5: `src/app/tasks/page.tsx` (필터 수신, C83) | ✅ |
+| P4-6: `src/app/logs/page.tsx` (실행 기록 목록, C83) | ✅ |
+| P4-7: `src/app/api/review/notes/route.ts` (고칠 점 API) | ✅ |
+| P4-7: `ReviewNoteForm.tsx`, `ReviewNoteList.tsx`, `ReviewTab.tsx` | ✅ |
+| P4-7: `PlanTabs.tsx` 확장 (3번째 탭 "돌아보기", Q7 확장) | ✅ |
+| P4-7: `src/app/plans/[id]/page.tsx` 수정 (reviewContent) | ✅ |
+
+**검증 완료:**
+- `/api/review?planId=...` → `{planCount:4, doneCount:4, overdueCount:0, blockedCount:1, estimatedMinutes:37, actualMinutes:65, diffMinutes:28}` (산술 일치)
+- `/review` 화면: 집계 카드 7개 (계획/완료/지연/막힘/예상/실제/차이), 값 일치
+- 카드 클릭 → `/tasks?filter=active|done|overdue|blocked|all` 또는 `/logs` 이동
+- `/logs`: 실행 기록 3건, 총 65분 (실제 시간과 일치)
+- `/plans/[id]` "돌아보기" 탭: 이 계획 집계 + 고칠 점 입력/저장/새로고침 유지 (C33)
+
+**통과 기준:**
+- **T06-C28~C32** ✅ (테스트 24개로 고정)
+- **T06-C83** ✅ (7개 카드 전부 이동)
+- **T06-C33** ✅ (고칠 점 저장 + 새로고침 유지)
+- **T06-C22** ✅ (P3 이월, 완료 수 정확히 셈)
+
+**설계 결정 기록:**
+- **Q7 확장:** `/plans/[id]` 탭을 2개 → **3개**로 (현재 계획 / 수정 이력 / 돌아보기)
+- **C33 위치:** `/plans/[id]`의 "돌아보기" 탭 (B안 채택)
+- **filter 처리:** `active`/`done`은 SQL, `overdue`/`blocked`는 JS (KST 계산/조인 필요)
+- **집계 함수 재사용:** `/review`(전체), `/plans/[id]` 돌아보기 탭(계획별), `/api/review` 모두 `computeAggregates` 하나로
+
+**테스트 파일:**
+- `aggregate.test.ts` (15): C28~C32 모든 케이스 + Q2(기록 0개) + Q3(막힘 중복) + 통합
+- `idempotency.test.ts` (3): C21 조건부 UPDATE 시뮬레이션
+- `kst-boundary.test.ts` (6): C30 KST 경계 + todayKst 형식
+
+### P5-1.6 — 계획 삭제 (soft delete, Q7 확장)
+
+**배경:** 사용자 편의를 위해 계획 삭제 버튼 추가. 단 C08 정신(수정 이력 보존)과 충돌하지 않게 **soft delete**로 구현.
+
+**작업:**
+| 작업 | 상태 |
+|------|------|
+| `plan.deletedAt` 컬럼 추가 (schema.ts) | ✅ |
+| `db:push` 마이그레이션 | ✅ |
+| `DELETE /api/plans/[id]` (Plan + Task cascade soft) | ✅ |
+| `/api/plans` GET 필터 (`isNull(plan.deletedAt)`) | ✅ |
+| `/plans`, 홈 최근 계획 필터 | ✅ |
+| `DeletePlanButton.tsx` (확인 다이얼로그) | ✅ |
+| `/plans/[id]` 버튼 삽입 | ✅ |
+| `pds-schema-v2.json` 재생성 | ✅ |
+
+**설계 결정:**
+- **cascade soft delete:** Plan 삭제 시 그 Plan의 Task도 `deletedAt` 설정 → 집계에서 자동 제외 (Task의 `deletedAt IS NULL` 조건 재사용)
+- **PlanRevision, ExecutionLog, ReviewNote는 안 건드림** → 이력·기록 보존 (C08 정신)
+- **내보내기엔 포함** → "잃지 않게" 정신 (C36)
+- **기준 충돌 없음:** C08, C28~C32, C33, C36 모두 유지
+
+**통과 기준:** 삭제는 과제 요구가 아니지만, 편의 기능으로 추가. 기준 위배 없음.
+
+
 ## 7. 스킬 사용 기록
 
 | 스킬 | 사용 시점 | 결과 |
@@ -276,12 +368,11 @@ Q1~Q9 확정. 위 2절 참조.
 
 ---
 
+
 ## 9. 남은 작업
 
-- P3: 완료 멱등 (카드 3, C21, C22)
-- P4: 돌아보기 집계 + 근거 이동 (카드 4, C28~C33, C83)
-- P5: 내 것으로 채우기 + 내보내기 + 안내 문구 + 스키마 JSON (카드 5, C34~C36, C78~C82, C57, C58)
-- P6: 제출물 4종 + 배포 + 검증
+- P5-7: 비밀값 노출 점검 (C58)
+- P6: 제출물 4종 + 배포 + 검증 (C59, C60, C01)
 
 ---
 

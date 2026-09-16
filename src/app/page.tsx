@@ -1,69 +1,92 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { ArrowRight, WarningCircle } from '@phosphor-icons/react/dist/ssr';
+import { db } from '@/db';
+import { plan } from '@/db/schema';
+import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/domain/ExportButton';
+import { desc, isNull } from 'drizzle-orm';
 
-export default function Home() {
+
+export default async function HomePage() {
+  const recentPlans = await db
+  .select()
+  .from(plan)
+  .where(isNull(plan.deletedAt))
+  .orderBy(desc(plan.createdAt))
+  .limit(3);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="mx-auto w-full max-w-3xl px-4 py-10">
+      {/* C82: 로그인 없음 안내 (문구 그대로) */}
+      <div className="mb-8 flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 p-3.5 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+        <WarningCircle size={18} weight="bold" className="mt-0.5 shrink-0" />
+        <p>
+          지금은 로그인이 없어 링크를 아는 사람은 누구나 볼 수 있습니다. 남이 봐도 괜찮은 내용만 넣으세요.
+        </p>
+      </div>
+
+      {/* 히어로 */}
+      <header className="mb-10">
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          플랜두씨 다이어리
+        </h1>
+        <p className="mt-3 text-base text-muted-foreground">
+          계획, 실제로 한 일, 돌아보기를 한 곳에서.
+        </p>
+
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <Button asChild>
+            <Link href="/plans">
+              계획 보기
+              <ArrowRight size={16} weight="bold" />
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/review">돌아보기</Link>
+          </Button>
+          <ExportButton variant="ghost" />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </header>
+
+      {/* 최근 계획 */}
+      <section>
+        <div className="mb-4 flex items-baseline justify-between">
+          <h2 className="text-sm font-medium">최근 계획</h2>
+          <Link
+            href="/plans"
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            전체 보기
+          </Link>
         </div>
-      </main>
-    </div>
+
+        {recentPlans.length === 0 ? (
+          <div className="rounded-lg border border-dashed py-10 text-center">
+            <p className="text-sm text-muted-foreground">
+              아직 계획이 없습니다.
+            </p>
+            <Button asChild variant="outline" size="sm" className="mt-3">
+              <Link href="/plans/new">첫 계획 만들기</Link>
+            </Button>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {recentPlans.map((p) => (
+              <li key={p.id}>
+                <Link
+                  href={`/plans/${p.id}`}
+                  className="flex items-baseline justify-between gap-3 rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+                >
+                  <span className="font-medium">{p.title}</span>
+                  <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                    {p.periodStart} ~ {p.periodEnd}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </main>
   );
 }

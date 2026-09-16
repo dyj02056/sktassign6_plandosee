@@ -2,12 +2,16 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { plan } from '@/db/schema';
 import { planInputSchema } from '@/lib/validate';
-import { desc } from 'drizzle-orm';
+import { desc, isNull } from 'drizzle-orm';
 
 // GET /api/plans — 계획 목록
 export async function GET() {
   try {
-    const rows = await db.select().from(plan).orderBy(desc(plan.createdAt));
+    const rows = await db
+      .select()
+      .from(plan)
+      .where(isNull(plan.deletedAt))
+      .orderBy(desc(plan.createdAt));
     return NextResponse.json(rows);
   } catch (error) {
     console.error('[GET /api/plans]', error);

@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { db } from '@/db';
 import { plan } from '@/db/schema';
-import { desc } from 'drizzle-orm';
 import { Plus } from '@phosphor-icons/react/dist/ssr';
 import { Button } from '@/components/ui/button';
+import { desc, isNull } from 'drizzle-orm';
+
+
 
 const priorityLabel: Record<string, string> = {
   low: '낮음',
@@ -12,8 +14,12 @@ const priorityLabel: Record<string, string> = {
 };
 
 export default async function PlansPage() {
-  const rows = await db.select().from(plan).orderBy(desc(plan.createdAt));
-
+  const rows = await db
+  .select()
+  .from(plan)
+  .where(isNull(plan.deletedAt))
+  .orderBy(desc(plan.createdAt));
+  
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-10">
       <header className="mb-8 flex items-center justify-between">

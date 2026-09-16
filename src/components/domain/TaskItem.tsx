@@ -1,6 +1,9 @@
 import type { InferSelectModel } from 'drizzle-orm';
 import { task, executionLog } from '@/db/schema';
 import { ExecutionForm } from './ExecutionForm';
+import { CompleteButton } from './CompleteButton';
+import { DeleteTaskButton } from './DeleteTaskButton';
+
 
 type Task = InferSelectModel<typeof task>;
 type Execution = InferSelectModel<typeof executionLog>;
@@ -69,8 +72,12 @@ export function TaskItem({ task: t, executions }: Props) {
         </ol>
       )}
 
-      <div className="mt-3">
+      <div className="mt-3 flex items-center justify-between gap-2">
         <ExecutionForm taskId={t.id} />
+          <div className="flex items-center gap-1">
+            <CompleteButton taskId={t.id} completed={isDone} />
+            <DeleteTaskButton taskId={t.id} taskTitle={t.title} />
+          </div>
       </div>
     </li>
   );
