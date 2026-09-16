@@ -28,7 +28,7 @@ export default async function ReviewPage() {
           href="/"
           className="font-mono text-xs text-muted-foreground transition-colors hover:text-brand"
         >
-          ← /
+          ← home
         </Link>
       </header>
 
