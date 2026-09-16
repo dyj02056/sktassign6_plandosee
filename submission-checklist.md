@@ -22,7 +22,7 @@ https://sktassign6-plandosee.vercel.app
 **GitHub 전체 commit URL:**
 
 ```
-https://github.com/dyj02056/sktassign6_plandosee/commit/452d358242232e6bbc727b64244604ccdb553720
+https://github.com/dyj02056/sktassign6_plandosee/commit/ba72dfbb58e2e9002ef91a1d6540c2faec85a73a
 ```
 
 **검증:**
