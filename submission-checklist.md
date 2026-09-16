@@ -10,7 +10,7 @@
 **`https://` 로그인 없이 바로 열리는 배포 URL:**
 
 ```
-(배포 후 기입)
+https://sktassign6-plandosee.vercel.app
 ```
 
 **검증:** 새 시크릿 창에서 열림, 계정 생성·로그인·인증·초대·비밀번호·OAuth·CAPTCHA 없음 (T06-C01).
@@ -22,7 +22,7 @@
 **GitHub 전체 commit URL:**
 
 ```
-https://github.com/<owner>/<repo>/commit/<40자리-또는-64자리-소문자-full-hash>
+https://github.com/dyj02056/sktassign6_plandosee/commit/452d358242232e6bbc727b64244604ccdb553720
 ```
 
 **검증:**
@@ -36,7 +36,7 @@ https://github.com/<owner>/<repo>/commit/<40자리-또는-64자리-소문자-ful
 
 ### ① 어디로 가나요
 
-**공개 결과물 URL** (1번 항목과 동일)
+**https://sktassign6-plandosee.vercel.app**
 
 ### ② 무엇을 하나요 (3단계 이내)
 
@@ -71,6 +71,7 @@ https://github.com/<owner>/<repo>/commit/<40자리-또는-64자리-소문자-ful
 - API·화면 코드 초안 작성
 - 집계 로직(C28~C32)과 테스트 24개 작성
 - 스크립트 이스케이프·비밀값 노출 점검 가이드
+- 다크 CLI 미학 디자인 (프롬프트 모티프, box-drawing, divide-y 리스트)
 
 ### ② 내가 직접 판단한 일
 
@@ -80,12 +81,15 @@ https://github.com/<owner>/<repo>/commit/<40자리-또는-64자리-소문자-ful
 - **"내 것으로 채우기"**: 테스트 데이터를 soft delete하고 **실제 할 일 5개** 구성
 - **`isoDateString` 도입**: `z.string().datetime()`이 `+09:00` 오프셋 거부 → 커스텀 검증
 - **탭 확장**: Q7의 2탭 → **3탭** (돌아보기 추가)
+- **다크 고정 + CLI 미학**: 항상 다크, Emerald accent, `rounded-none`, 프롬프트 모티프
+- **홈 링크(`← /`)를 모든 페이지에 추가**: 네비게이션 편의
 
 ### ③ AI 말을 안 들은 일
 
 - **계획 삭제**: AI가 처음엔 "옵션 C(삭제 안 만듦)"를 권했으나, 사용자 편의를 위해 **옵션 B(soft delete)로 진행**
 - **모달 vs 인라인**: AI는 인라인을 권했으나, 삭제 확인엔 모달 사용 (파괴적 행동)
 - **DB 선택**: AI가 처음 제안한 Supabase 대신 **Neon으로 전환** (한도 문제)
+- **디자인 방향**: AI가 "밋밋함 해소"에 여러 제안을 했으나, **CLI 미학으로 최종 결정**
 
 ---
 
@@ -146,7 +150,7 @@ https://github.com/<owner>/<repo>/commit/<40자리-또는-64자리-소문자-ful
 |------|------|------|
 | T06-C34 서버 DB 저장 | ✅ | Neon Postgres |
 | T06-C35 새로고침 복원 | ✅ | 검증 완료 |
-| T06-C78 계획 1개 이상 | ✅ | 2개 |
+| T06-C78 계획 1개 이상 | ✅ | 2개 이상 |
 | T06-C79 할 일 5개 이상 | ✅ | 5개 |
 | T06-C80 실행 기록 3개 이상 | ✅ | 4건 |
 | T06-C81 돌아보기 채워짐 | ✅ | 검증 완료 |
@@ -156,7 +160,7 @@ https://github.com/<owner>/<repo>/commit/<40자리-또는-64자리-소문자-ful
 | T06-C57 스크립트 이스케이프 | ✅ | React 기본 이스케이프 |
 | T06-C59 확인 방법 4줄 | ✅ | 이 문서 3절 |
 | T06-C60 AI와 내 판단 3줄 | ✅ | 이 문서 4절 |
-| T06-C01 새 시크릿 창에서 열림 | ⏳ | 배포 후 검증 |
+| T06-C01 새 시크릿 창에서 열림 | ✅ | Vercel 배포, 로그인 없음 |
 
 ---
 
@@ -184,11 +188,11 @@ https://github.com/<owner>/<repo>/commit/<40자리-또는-64자리-소문자-ful
 
 ## 8. 남은 작업
 
-- [ ] **Vercel 배포** (P6-4)
-- [ ] **시크릿 창 검증** (C01, P6-5)
-- [ ] **배포 URL, 소스 commit URL 기입** (1, 2절)
-- [ ] **`submission-note.md` 최종 정리** (P6-6)
+- [x] Vercel 배포 (P6-4)
+- [x] 시크릿 창 검증 (C01, P6-5)
+- [x] 배포 URL, 소스 commit URL 기입 (1, 2절)
+- [x] `submission-note.md` 최종 정리 (P6-6)
 
 ---
 
-**최종 갱신:** 2026-09-16 (P6-3 완료 시점)
+**최종 갱신:** 2026-09-16 (P6-4 완료, 배포 성공 시점)

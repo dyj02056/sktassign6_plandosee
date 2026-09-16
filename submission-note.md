@@ -67,6 +67,7 @@
   - Q7-a: **(a) 인라인 수정** (`/plans/[id]`에서 바로)
   - Q7-b: **(iii) 탭** (`현재 계획` / `수정 이력`)
   - Q7-c: 6단계 확인 절차를 `submission-checklist.md`에 명시
+- **확장 (P4-7):** 탭을 3개로 (현재 계획 / 수정 이력 / **돌아보기**). "돌아보기" 탭에서 C33(고칠 점 → 다음 계획) 입력
 
 ### Q8. 집계 → 근거 이동 (C83)
 
@@ -101,7 +102,7 @@
 | 검증 | Zod |
 | 타임존 | date-fns-tz (Asia/Seoul) |
 | 테스트 | Vitest |
-| 배포 (예정) | Vercel |
+| 배포 | Vercel |
 | 패키지 매니저 | npm |
 
 **DB 호스팅 변경 이력:**
@@ -111,53 +112,63 @@
 ---
 
 ## 4. 스키마 (5 테이블)
-Plan — 계획 (id, title, period_start, period_end, priority, success_criteria, estimated_minutes, created_at, updated_at)
-PlanRevision — 수정 이력 (id, plan_id, snapshot jsonb, changed_fields text[], revised_at)
-Task — 할 일 (id, plan_id, title, due_at, estimated_minutes, deleted_at, completed_at, created_at)
-ExecutionLog — 실행 기록 (id, task_id, started_at, ended_at, duration_minutes, blocked_reason)
-ReviewNote — 돌아보기→다음 계획 (id, plan_id, fix_note, carried_to_plan_id)
 
+```
+Plan          — 계획 (id, title, period_start, period_end, priority, success_criteria, estimated_minutes, created_at, updated_at, deleted_at)
+PlanRevision  — 수정 이력 (id, plan_id, snapshot jsonb, changed_fields text[], revised_at)
+Task          — 할 일 (id, plan_id, title, due_at, estimated_minutes, deleted_at, completed_at, created_at)
+ExecutionLog  — 실행 기록 (id, task_id, started_at, ended_at, duration_minutes, blocked_reason)
+ReviewNote    — 돌아보기→다음 계획 (id, plan_id, fix_note, carried_to_plan_id)
+```
 
 **폐기:** `Completion` 테이블, `Task.status` 컬럼 (Q6)
 
 **enum:** `priority` (low | medium | high)
 
+**P5-1.6 추가:** `Plan.deletedAt` (soft delete, cascade soft delete로 Task도 함께)
+
 ---
 
 ## 5. 디렉터리 구조
+
+```
 sktassign6_plandosee/
 ├── src/
-│ ├── app/ # Next.js App Router
-│ ├── components/
-│ │ ├── ui/ # shadcn 컴포넌트
-│ │ └── domain/ # 도메인 컴포넌트
-│ ├── db/
-│ │ ├── index.ts # Drizzle 연결
-│ │ └── schema.ts # 5 테이블 정의
-│ └── lib/
-│ ├── utils.ts # shadcn cn 함수
-│ ├── validate.ts # Zod 스키마
-│ ├── time.ts # KST 유틸
-│ ├── aggregate.ts # 집계 (C28~C32)
-│ └── export.ts # JSON 내보내기
+│   ├── app/                    # Next.js App Router
+│   │   ├── page.tsx            # 첫 화면 (C82 안내 배너)
+│   │   ├── layout.tsx          # 다크 고정
+│   │   ├── plans/              # 계획 목록/상세/생성
+│   │   ├── tasks/              # 필터된 할 일 목록
+│   │   ├── logs/               # 실행 기록 목록
+│   │   ├── review/             # 돌아보기 집계
+│   │   └── api/                # API 라우트
+│   ├── components/
+│   │   ├── ui/                 # shadcn 컴포넌트
+│   │   └── domain/             # 도메인 컴포넌트
+│   ├── db/
+│   │   ├── index.ts            # Drizzle 연결 (Neon)
+│   │   └── schema.ts           # 5개 테이블 정의 (진실 공급원)
+│   └── lib/
+│       ├── aggregate.ts        # 집계 함수 (C28~C32)
+│       ├── time.ts             # KST 유틸
+│       ├── validate.ts         # Zod 스키마
+│       └── export.ts           # JSON 내보내기
 ├── contracts/
-│ └── pds-schema-v2.json # 스키마 문서 (자동 생성 예정)
+│   └── pds-schema-v2.json      # 스키마 문서 (자동 생성)
 ├── tests/
-│ ├── aggregate.test.ts # C28~C32
-│ ├── idempotency.test.ts # C21, C22
-│ └── kst-boundary.test.ts # C30
+│   ├── aggregate.test.ts       # C28~C32
+│   ├── idempotency.test.ts     # C21
+│   └── kst-boundary.test.ts    # C30 KST 경계
 ├── scripts/
-│ └── gen-schema-json.ts # schema.ts → JSON
-├── .env.local # DATABASE_URL (Git 제외)
-├── .env.example # 키 이름만
-├── drizzle.config.ts # Drizzle Kit 설정
-├── components.json # shadcn 설정
+│   └── gen-schema-json.ts      # 스키마 JSON 생성
+├── .env.local                  # DATABASE_URL (Git 제외)
+├── .env.example                # 키 이름만
+├── drizzle.config.ts
 ├── package.json
-├── tsconfig.json
-├── next.config.ts
 ├── README.md
-├── submission-note.md # 이 문서
+├── submission-note.md
 └── submission-checklist.md
+```
 
 ---
 
@@ -272,7 +283,7 @@ Q1~Q9 확정. 위 2절 참조.
   - 두 번째 요청은 0행 변경 → 멱등
 - **T06-C23~C26:** P2에서 이미 검증 (실행 기록 4개 필드 저장)
 - **T06-C27:** Plan 조회 → 실행 기록 추가 → Plan 재조회 → 값 완전 동일 (updatedAt 포함)
-- **T06-C22:** P4(돌아보기)에서 검증 예정
+- **T06-C22:** P4(돌아보기)에서 검증
 
 **설계 결정 기록:**
 - **완료 멱등의 보장 지점:** 서버의 조건부 UPDATE. 버튼 잠금은 UX일 뿐 (카드3 "버튼 잠금만으로는 불통과" 준수)
@@ -321,59 +332,117 @@ Q1~Q9 확정. 위 2절 참조.
 - `idempotency.test.ts` (3): C21 조건부 UPDATE 시뮬레이션
 - `kst-boundary.test.ts` (6): C30 KST 경계 + todayKst 형식
 
-### P5-1.6 — 계획 삭제 (soft delete, Q7 확장)
+### P5 — 카드 5: 내 것으로 채우고, 잃지 않게 (완료 ✅)
 
-**배경:** 사용자 편의를 위해 계획 삭제 버튼 추가. 단 C08 정신(수정 이력 보존)과 충돌하지 않게 **soft delete**로 구현.
+**목표:** C34~C36, C78~C82, C57, C58
 
-**작업:**
 | 작업 | 상태 |
 |------|------|
-| `plan.deletedAt` 컬럼 추가 (schema.ts) | ✅ |
-| `db:push` 마이그레이션 | ✅ |
-| `DELETE /api/plans/[id]` (Plan + Task cascade soft) | ✅ |
-| `/api/plans` GET 필터 (`isNull(plan.deletedAt)`) | ✅ |
-| `/plans`, 홈 최근 계획 필터 | ✅ |
-| `DeletePlanButton.tsx` (확인 다이얼로그) | ✅ |
-| `/plans/[id]` 버튼 삽입 | ✅ |
-| `pds-schema-v2.json` 재생성 | ✅ |
+| P5-1: 실제 할 일 5개 이상 구성 (테스트용 soft delete) | ✅ |
+| P5-1.5: `DeleteTaskButton.tsx` (할 일 삭제 UI) | ✅ |
+| P5-2: `src/lib/export.ts` + `src/app/api/export/route.ts` | ✅ |
+| P5-2-3: `ExportButton.tsx` | ✅ |
+| P5-2-4: `/review`에 내보내기 버튼 삽입 | ✅ |
+| P5-4: `src/app/page.tsx` 첫 화면 재작성 (C82 상단 배너) | ✅ |
+| P5-5: `scripts/gen-schema-json.ts` + `contracts/pds-schema-v2.json` | ✅ |
+| P5-6: 스크립트 이스케이프 점검 (C57) | ✅ |
+| P5-7: 비밀값 노출 점검 (C58) | ✅ |
 
-**설계 결정:**
-- **cascade soft delete:** Plan 삭제 시 그 Plan의 Task도 `deletedAt` 설정 → 집계에서 자동 제외 (Task의 `deletedAt IS NULL` 조건 재사용)
-- **PlanRevision, ExecutionLog, ReviewNote는 안 건드림** → 이력·기록 보존 (C08 정신)
-- **내보내기엔 포함** → "잃지 않게" 정신 (C36)
-- **기준 충돌 없음:** C08, C28~C32, C33, C36 모두 유지
+**검증 완료:**
+- **C78:** 계획 2개 이상 (매일 30분 독서, 저녁 먹고 수업 복습) + 지운 계획 1개 (soft delete)
+- **C79:** 할 일 5개 (운동 30분, 물 2L, 스트레칭, 러닝, 독서)
+- **C80:** 실행 기록 4건
+- **C81:** 돌아보기 채워짐 (계획 수, 완료 수, 실제 시간 등 0 아님)
+- **C36:** `/api/export` → JSON 1파일, counts: plans 3, tasks 9, executions 4
+- **C82:** 첫 화면 상단 배너, 문구 그대로
+- **C57:** 스크립트 모양 글자가 글자로 표시 (React 기본 이스케이프, `dangerouslySetInnerHTML` 없음)
+- **C58:** Git에 `.env*`, `.next/` 한 번도 안 올라감. `.gitignore`에 포함
 
-**통과 기준:** 삭제는 과제 요구가 아니지만, 편의 기능으로 추가. 기준 위배 없음.
+**설계 결정 기록:**
+- **P5-1.6 (계획 삭제, soft delete):** `plan.deletedAt` 추가. cascade soft delete로 Plan + Task 같이. PlanRevision/ExecutionLog/ReviewNote는 보존 (C08 정신). 내보내기엔 포함 (C36 정신)
+- **내보내기 형식:** JSON 1파일 (Q9-a). 5개 테이블 전부. soft delete 포함
+- **스키마 JSON:** `scripts/gen-schema-json.ts`로 자동 생성. 집계·날짜·멱등 규칙 포함
+- **Turbopack 캐시 주의:** `.next/cache/turbopack/*.sst`에 env 평문 캐시됨. `.gitignore`로 Git 노출은 방지. Vercel 배포 시엔 자체 빌드라 안전
 
+### P6 — 제출 준비 (완료 ✅)
+
+| 작업 | 상태 |
+|------|------|
+| P6-1: `.next` 삭제 (로컬 정리) | ✅ |
+| P6-2: `README.md` 작성 (기능·구조·집계·로컬 실행) | ✅ |
+| P6-3: `submission-checklist.md` 작성 | ✅ |
+| P6-4: Vercel 배포 | ✅ |
+| P6-5: 시크릿 창 검증 (C01) | ✅ |
+| P6-6: `submission-note.md` 최종 정리 | ✅ (이 문서) |
+
+**P6.5 — 다크 CLI 미학 (P6 전 별도 스프린트):**
+- 다크 모드 고정 (`<html class="dark">`)
+- Emerald accent (`--brand: oklch(0.72 0.15 162)`)
+- `--radius: 0` (모든 모서리 각짐)
+- 프롬프트 모티프 (`$`, `▸`, `!`, `#`)
+- 상태 체크박스 (`[✓]` `[!]` `[ ]`)
+- `divide-y` 리스트 (카드 최소화)
+- `tabular-nums` (숫자 정렬)
+- `Prompt.tsx`, `SectionTitle.tsx` 공용 컴포넌트
+- 홈 링크 (`← /`) 모든 페이지에 추가
+- `--input-bg` (입력 필드 배경 별도 토큰)
+
+**검증 완료:**
+- **결과물 URL:** https://sktassign6-plandosee.vercel.app
+- **소스 URL:** https://github.com/dyj02056/sktassign6_plandosee/commit/452d358242232e6bbc727b64244604ccdb553720
+- **C01:** 시크릿 창에서 로그인 없이 열림
+- **Vercel 배포:** 성공 (환경변수 `DATABASE_URL` 설정 후)
+
+**배포 중 발생한 문제:**
+- **첫 배포 실패:** `DATABASE_URL is not set` → Vercel Environment Variables에 `DATABASE_URL` 추가 후 재배포 성공
+
+**설계 결정 기록:**
+- **다크 고정:** 시스템 설정 무시, 항상 다크 (impeccable §4.11 Page Theme Lock)
+- **CLI 미학:** 터미널 느낌, AI 티 회피 (impeccable §9.F "dark tech" 정식 허용)
+- **accent 색:** Emerald (완료/성취 의미, AI가 안 쓰는 색)
+
+---
 
 ## 7. 스킬 사용 기록
 
 | 스킬 | 사용 시점 | 결과 |
 |------|-----------|------|
 | `grill-me` | P0 설계 검증 | `grilling` 스킬 파일이 없어, 그 정신(집요한 인터뷰)을 직접 구현해 Q1~Q9 진행 |
-| `impeccable` | 주 디자인 스킬 (예정) | P1~P5 UI 작업 시 |
+| `impeccable` | 주 디자인 스킬 | P6.5에서 CLI 미학 적용 (다크 고정, accent, rounded-none, 프롬프트) |
 | `design-taste-frontend` | 참고만 | 구체 금지 패턴(엠대시, AI Tells)만 차용 |
-| `caveman-compress` | 작업 중 (선택) | submission-note 토큰 절약 |
-| `token-optimizer` | 컨텍스트 압박 시 | 과제와 무관 |
+| `caveman-compress` | 미사용 | submission-note 토큰 여유 있었음 |
+| `token-optimizer` | 미사용 | 컨텍스트 압박 없었음 |
 
 ---
 
 ## 8. AI와 내 판단 (3줄)
 
-> 이 항목은 최종 제출 시 채웁니다. 현재까지 기록:
+> 이 항목은 최종 제출 시 채웁니다. `submission-checklist.md` 4절 참조.
 
-- **AI에게 맡긴 일:** 설계 검증(grilling), 스키마 초안, 셋업 명령 안내
-- **내가 판단한 일:** (최종 작성 시 정리)
-- **AI 말을 안 들은 일:** (최종 작성 시 정리)
+- **AI에게 맡긴 일:** 설계 검증(grilling), 스키마 초안, 셋업 명령 안내, API·화면 코드 초안, 집계 로직 + 테스트 24개, CLI 미학 디자인
+- **내가 판단한 일:** DB 호스팅(Neon 전환), shadcn 프리셋(Radix+Lyra), 계획 삭제 방식(soft delete), 실 데이터 구성, `isoDateString`, 탭 확장, 다크+CLI 미학, 홈 링크
+- **AI 말을 안 들은 일:** 계획 삭제(AI는 "삭제 안 만듦" 권고 → soft delete로 진행), DB 선택(Supabase → Neon), 디자인 방향(CLI 미학으로 최종)
 
 ---
-
 
 ## 9. 남은 작업
 
-- P5-7: 비밀값 노출 점검 (C58)
-- P6: 제출물 4종 + 배포 + 검증 (C59, C60, C01)
+**모두 완료.** 과제 6 제출 준비 완료.
+
+- 결과물 URL: https://sktassign6-plandosee.vercel.app
+- 소스 URL: https://github.com/dyj02056/sktassign6_plandosee/commit/452d358242232e6bbc727b64244604ccdb553720
 
 ---
 
-**최종 갱신:** 2026-09-16 (P1-1 완료 시점)
+## 10. 최종 산출물 4종
+
+| # | 산출물 | 상태 | 위치 |
+|---|--------|------|------|
+| 1 | 결과 산출물 (코드/실행물) | ✅ | https://sktassign6-plandosee.vercel.app |
+| 2 | `submission-note.md` | ✅ | 이 문서 (채팅에 전문 정리) |
+| 3 | `submission-checklist.md` | ✅ | 저장소 루트 |
+| 4 | `README.md` | ✅ | 저장소 루트 |
+
+---
+
+**최종 갱신:** 2026-09-16 (P6-6 완료 시점)
