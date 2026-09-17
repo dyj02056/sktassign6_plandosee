@@ -1,14 +1,27 @@
 import Link from 'next/link';
+import { auth } from '@/auth';
 import { db } from '@/db';
 import { task, executionLog } from '@/db/schema';
-import { isNull, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { computeAggregates } from '@/lib/aggregate';
 import { AggregateGrid } from '@/components/domain/AggregateGrid';
 import { ExportButton } from '@/components/domain/ExportButton';
 import { Prompt, SectionTitle } from '@/components/domain/Prompt';
 
 export default async function ReviewPage() {
-  const tasks = await db.select().from(task).where(isNull(task.deletedAt));
+  const session = await auth();
+  if (!session?.user?.id) {
+    return null; // 미들웨어가 /login으로 보냄
+  }
+
+  // ★ 내 task만 (T07-C125)
+  const tasks = await db
+    .select()
+    .from(task)
+    .where(and(
+      eq(task.userId, session.user.id),
+      isNull(task.deletedAt)
+    ));
 
   const taskIds = tasks.map((t) => t.id);
   const executions =
@@ -16,7 +29,10 @@ export default async function ReviewPage() {
       ? await db
           .select()
           .from(executionLog)
-          .where(inArray(executionLog.taskId, taskIds))
+          .where(and(
+            inArray(executionLog.taskId, taskIds),
+            eq(executionLog.userId, session.user.id)   // ★
+          ))
       : [];
 
   const aggregates = computeAggregates(tasks, executions);
@@ -37,7 +53,7 @@ export default async function ReviewPage() {
           <SectionTitle className="text-base">review --all</SectionTitle>
           <p className="mt-1 font-mono text-xs text-muted-foreground">
             <Prompt className="text-muted-foreground"># </Prompt>
-            숫자를 누르면 그 숫자가 나온 기록으로 이동합니다.
+            숫자를 누르면 그 숫자가 나온 기록으로 이동합니다
           </p>
         </div>
         <ExportButton />

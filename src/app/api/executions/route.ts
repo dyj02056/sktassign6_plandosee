@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { db } from '@/db';
-import { executionLog } from '@/db/schema';
+import { executionLog, task } from '@/db/schema';
 import { executionInputSchema } from '@/lib/validate';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 
 // GET /api/executions?taskId=xxx — 실행 기록 목록
 export async function GET(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const taskId = searchParams.get('taskId');
 
@@ -20,7 +26,10 @@ export async function GET(request: Request) {
     const rows = await db
       .select()
       .from(executionLog)
-      .where(eq(executionLog.taskId, taskId))
+      .where(and(
+        eq(executionLog.taskId, taskId),
+        eq(executionLog.userId, session.user.id)   // ★ T07-C123, C125
+      ))
       .orderBy(desc(executionLog.startedAt));
 
     return NextResponse.json(rows);
@@ -36,6 +45,11 @@ export async function GET(request: Request) {
 // POST /api/executions — 실행 기록 생성 (T06-C10)
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const parsed = executionInputSchema.safeParse(body);
 
@@ -48,9 +62,27 @@ export async function POST(request: Request) {
 
     const data = parsed.data;
 
+    // ★ 부모 task가 진짜 내 것인지 확인 (T07-C123)
+    const [parentTask] = await db
+      .select()
+      .from(task)
+      .where(and(
+        eq(task.id, data.taskId),
+        eq(task.userId, session.user.id)
+      ))
+      .limit(1);
+
+    if (!parentTask) {
+      return NextResponse.json(
+        { error: '할 일을 찾을 수 없습니다' },
+        { status: 404 }   // T07-C121
+      );
+    }
+
     const [created] = await db
       .insert(executionLog)
       .values({
+        userId: session.user.id,           // ★ 소유자 부여
         taskId: data.taskId,
         startedAt: new Date(data.startedAt),
         endedAt: new Date(data.endedAt),

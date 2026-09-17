@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { auth } from '@/auth';
 import { db } from '@/db';
 import { task, executionLog, plan } from '@/db/schema';
 import { eq, and, isNull, isNotNull, inArray, desc } from 'drizzle-orm';
@@ -41,12 +42,25 @@ function formatKst(iso: string | Date | null): string {
 }
 
 export default async function TasksPage({ searchParams }: Props) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return null; // 미들웨어가 /login으로 보냄
+  }
+
   const sp = await searchParams;
   const filter = normalizeFilter(sp.filter);
 
-  let whereCondition = isNull(task.deletedAt);
+  // ★ 항상 내 것만 (T07-C125)
+  let whereCondition = and(
+    eq(task.userId, session.user.id),
+    isNull(task.deletedAt)
+  )!;
   if (filter === 'done') {
-    whereCondition = and(isNull(task.deletedAt), isNotNull(task.completedAt))!;
+    whereCondition = and(
+      eq(task.userId, session.user.id),
+      isNull(task.deletedAt),
+      isNotNull(task.completedAt)
+    )!;
   }
 
   const allTasks = await db
@@ -58,7 +72,13 @@ export default async function TasksPage({ searchParams }: Props) {
   const planIds = [...new Set(allTasks.map((t) => t.planId))];
   const plans =
     planIds.length > 0
-      ? await db.select().from(plan).where(inArray(plan.id, planIds))
+      ? await db
+          .select()
+          .from(plan)
+          .where(and(
+            inArray(plan.id, planIds),
+            eq(plan.userId, session.user.id)   // ★
+          ))
       : [];
   const planTitleMap = new Map(plans.map((p) => [p.id, p.title]));
 
@@ -68,7 +88,10 @@ export default async function TasksPage({ searchParams }: Props) {
       ? await db
           .select()
           .from(executionLog)
-          .where(inArray(executionLog.taskId, taskIds))
+          .where(and(
+            inArray(executionLog.taskId, taskIds),
+            eq(executionLog.userId, session.user.id)   // ★
+          ))
       : [];
 
   const executionsByTask = new Map<string, typeof executions>();
@@ -95,7 +118,7 @@ export default async function TasksPage({ searchParams }: Props) {
           href="/review"
           className="font-mono text-xs text-muted-foreground transition-colors hover:text-brand"
         >
-          ← /review
+          → /review
         </Link>
       </header>
 
@@ -127,7 +150,7 @@ export default async function TasksPage({ searchParams }: Props) {
       {filtered.length === 0 ? (
         <div className="border border-dashed border-border py-12 text-center">
           <p className="font-mono text-sm text-muted-foreground">
-            이 조건에 맞는 할 일이 없습니다.
+            조건에 맞는 할 일이 없습니다.
           </p>
         </div>
       ) : (

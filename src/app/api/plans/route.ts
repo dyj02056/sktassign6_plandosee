@@ -1,16 +1,22 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { db } from '@/db';
 import { plan } from '@/db/schema';
 import { planInputSchema } from '@/lib/validate';
-import { desc, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 
-// GET /api/plans — 계획 목록
+// GET /api/plans — 내 계획 목록 (T07-C125: 내 것만)
 export async function GET() {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const rows = await db
       .select()
       .from(plan)
-      .where(isNull(plan.deletedAt))
+      .where(and(eq(plan.userId, session.user.id), isNull(plan.deletedAt)))
       .orderBy(desc(plan.createdAt));
     return NextResponse.json(rows);
   } catch (error) {
@@ -25,6 +31,11 @@ export async function GET() {
 // POST /api/plans — 계획 생성
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const parsed = planInputSchema.safeParse(body);
 
@@ -40,6 +51,7 @@ export async function POST(request: Request) {
     const [created] = await db
       .insert(plan)
       .values({
+        userId: session.user.id,          // ★ 소유자 부여
         title: data.title,
         periodStart: data.periodStart,
         periodEnd: data.periodEnd,

@@ -1,7 +1,8 @@
 import Link from 'next/link';
+import { auth } from '@/auth';
 import { db } from '@/db';
 import { plan } from '@/db/schema';
-import { desc, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import { Button } from '@/components/ui/button';
 import { Prompt, SectionTitle } from '@/components/domain/Prompt';
 
@@ -12,10 +13,18 @@ const PRIORITY_LABEL: Record<string, string> = {
 };
 
 export default async function PlansPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return null; // 미들웨어가 /login으로 보냄
+  }
+
   const rows = await db
     .select()
     .from(plan)
-    .where(isNull(plan.deletedAt))
+    .where(and(
+      eq(plan.userId, session.user.id),   // ★ T07-C125: 내 것만
+      isNull(plan.deletedAt)
+    ))
     .orderBy(desc(plan.createdAt));
 
   return (
@@ -59,7 +68,7 @@ export default async function PlansPage() {
                 className="grid grid-cols-[1fr_auto_auto] items-baseline gap-4 py-3.5 transition-colors hover:bg-accent/50"
               >
                 <span className="truncate">
-                  <Prompt className="text-muted-foreground">▸ </Prompt>
+                  <Prompt className="text-muted-foreground">▸</Prompt>
                   <span className="font-medium">{p.title}</span>
                 </span>
                 <span className="shrink-0 font-mono text-xs text-brand tabular-nums">

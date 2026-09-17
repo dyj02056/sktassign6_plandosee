@@ -1,7 +1,8 @@
 import Link from 'next/link';
+import { auth } from '@/auth';
 import { db } from '@/db';
 import { executionLog, task, plan } from '@/db/schema';
-import { desc, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { Prompt, SectionTitle } from '@/components/domain/Prompt';
 
 function formatKst(iso: string | Date | null): string {
@@ -19,22 +20,41 @@ function formatKst(iso: string | Date | null): string {
 }
 
 export default async function LogsPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return null; // 미들웨어가 /login으로 보냄
+  }
+
+  // ★ 내 실행 기록만 (T07-C125)
   const logs = await db
     .select()
     .from(executionLog)
+    .where(eq(executionLog.userId, session.user.id))
     .orderBy(desc(executionLog.startedAt));
 
   const taskIds = [...new Set(logs.map((l) => l.taskId))];
   const tasks =
     taskIds.length > 0
-      ? await db.select().from(task).where(inArray(task.id, taskIds))
+      ? await db
+          .select()
+          .from(task)
+          .where(and(
+            inArray(task.id, taskIds),
+            eq(task.userId, session.user.id)   // ★
+          ))
       : [];
   const taskMap = new Map(tasks.map((t) => [t.id, t]));
 
   const planIds = [...new Set(tasks.map((t) => t.planId))];
   const plans =
     planIds.length > 0
-      ? await db.select().from(plan).where(inArray(plan.id, planIds))
+      ? await db
+          .select()
+          .from(plan)
+          .where(and(
+            inArray(plan.id, planIds),
+            eq(plan.userId, session.user.id)   // ★
+          ))
       : [];
   const planMap = new Map(plans.map((p) => [p.id, p]));
 
@@ -47,7 +67,7 @@ export default async function LogsPage() {
           href="/review"
           className="font-mono text-xs text-muted-foreground transition-colors hover:text-brand"
         >
-          ← /review
+          → /review
         </Link>
       </header>
 

@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { auth } from '@/auth';
 import { db } from '@/db';
 import { plan, planRevision } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { and, eq, desc } from 'drizzle-orm';
 import { PlanForm } from '@/components/domain/PlanForm';
 import { PlanTabs } from '@/components/domain/PlanTabs';
 import { RevisionList } from '@/components/domain/RevisionList';
@@ -16,9 +17,21 @@ type Props = {
 };
 
 export default async function PlanDetailPage({ params }: Props) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    notFound();  // 미들웨어가 처리하지만 이중 방어
+  }
+
   const { id } = await params;
 
-  const [planRow] = await db.select().from(plan).where(eq(plan.id, id));
+  // ★ 소유권 검사 포함: 내 plan이 아니면 404 (T07-C117, C121)
+  const [planRow] = await db
+    .select()
+    .from(plan)
+    .where(and(
+      eq(plan.id, id),
+      eq(plan.userId, session.user.id)
+    ));
 
   if (!planRow || planRow.deletedAt) {
     notFound();
@@ -27,7 +40,10 @@ export default async function PlanDetailPage({ params }: Props) {
   const revisions = await db
     .select()
     .from(planRevision)
-    .where(eq(planRevision.planId, id))
+    .where(and(
+      eq(planRevision.planId, id),
+      eq(planRevision.userId, session.user.id)   // ★
+    ))
     .orderBy(desc(planRevision.revisedAt));
 
   return (
@@ -91,4 +107,3 @@ export default async function PlanDetailPage({ params }: Props) {
     </main>
   );
 }
-
