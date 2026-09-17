@@ -98,22 +98,24 @@ export function PlanForm({ initial, mode, planId }: Props) {
         <div className="grid gap-2">
           <Label htmlFor="periodStart">시작일</Label>
           <Input
-            id="periodStart"
-            type="date"
-            value={values.periodStart}
-            onChange={(e) => update('periodStart', e.target.value)}
-            required
-          />
+              id="periodStart"
+              type="date"
+              value={values.periodStart}
+              onChange={(e) => update('periodStart', e.target.value)}
+              required
+              className="[&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:cursor-pointer hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
+            />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="periodEnd">종료일</Label>
           <Input
-            id="periodEnd"
-            type="date"
-            value={values.periodEnd}
-            onChange={(e) => update('periodEnd', e.target.value)}
-            required
-          />
+              id="periodStart"
+              type="date"
+              value={values.periodStart}
+              onChange={(e) => update('periodStart', e.target.value)}
+              required
+              className="[&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:cursor-pointer hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
+            />
         </div>
       </div>
 
