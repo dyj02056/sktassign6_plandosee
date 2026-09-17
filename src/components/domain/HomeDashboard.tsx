@@ -35,7 +35,12 @@ export async function HomeDashboard({
           <span className="text-muted-foreground">whoami </span>
           {email}
         </p>
-        <LogoutButton />
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/settings">설정</Link>
+          </Button>
+          <LogoutButton />
+        </div>
       </div>
 
       <header className="mb-12">
