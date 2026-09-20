@@ -9,7 +9,7 @@
 | 항목 | 값 |
 |------|-----|
 | 결과물 URL | https://sktassign7-auth.vercel.app |
-| 소스 저장소 URL | https://github.com/dyj02056/sktassign6_plandosee/commit/`<T07-최종-SHA>` |
+| 소스 저장소 URL | https://github.com/dyj02056/sktassign6_plandosee/commit/85dafe8b8bce1ec9bbdec494216d4a1474e8d161 |
 | T06 조상 commit | `beb39fa9e42657b6b57b35cf5bd4cbd5ff7b3d3e` |
 
 > **T07 최종 commit SHA**는 5일 기록 완료 후 확정하여 갱신합니다.
