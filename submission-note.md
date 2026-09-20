@@ -12,7 +12,7 @@
 | 소스 저장소 | https://github.com/dyj02056/sktassign6_plandosee |
 | 브랜치 | `t07-auth` (main에서 파생) |
 | **T06 조상 commit** | `beb39fa9e42657b6b57b35cf5bd4cbd5ff7b3d3e` |
-| T07 최종 commit | `<T07-최종-SHA>` |
+| T07 최종 commit | [85dafe8b8bce1ec9bbdec494216d4a1474e8d161]
 | 계정 A (소유자) | jsw09172@gmail.com |
 | 계정 B (검증용) | jsw09173@gmail.com |
 
