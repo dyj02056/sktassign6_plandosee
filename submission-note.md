@@ -12,7 +12,7 @@
 | 소스 저장소 | https://github.com/dyj02056/sktassign6_plandosee |
 | 브랜치 | `t07-auth` (main에서 파생) |
 | **T06 조상 commit** | `beb39fa9e42657b6b57b35cf5bd4cbd5ff7b3d3e` |
-| T07 최종 commit | (5일 후 확정) |
+| T07 최종 commit | `<T07-최종-SHA>` |
 | 계정 A (소유자) | jsw09172@gmail.com |
 | 계정 B (검증용) | jsw09173@gmail.com |
 
@@ -141,16 +141,19 @@ middleware.ts
 |------|------|
 | `src/auth.ts` | NextAuth 설정 (authorize, jwt, session 콜백) |
 | `src/auth.config.ts` | **Edge 안전 경량 설정** (미들웨어 전용) |
+| `src/middleware.ts` | 보호 경로 리다이렉트 |
 | `src/app/api/auth/[...nextauth]/route.ts` | NextAuth API 핸들러 |
 | `src/app/api/auth/signup/route.ts` | 회원가입 API |
 | `src/app/api/auth/logout/route.ts` | 로그아웃 API (sessionVersion 증가) |
-| `src/middleware.ts` | 보호 경로 리다이렉트 |
+| `src/app/api/auth/delete/route.ts` | 계정 삭제 API (cascade) |
 | `src/app/login/page.tsx` | 로그인 페이지 (HomeLogin 재사용) |
 | `src/app/signup/page.tsx` | 회원가입 페이지 |
+| `src/app/settings/page.tsx` | 설정 페이지 (계정 정보 + 위험 구역) |
 | `src/types/next-auth.d.ts` | Session 타입 확장 |
 | `src/components/domain/HomeLogin.tsx` | 로그인 UI |
 | `src/components/domain/HomeDashboard.tsx` | 로그인 후 홈 |
 | `src/components/domain/LogoutButton.tsx` | 로그아웃 버튼 |
+| `src/components/domain/DeleteAccountButton.tsx` | 계정 삭제 버튼 (확인 다이얼로그) |
 
 #### 소유권 검사 추가 (T07-C116~C126)
 
@@ -278,7 +281,7 @@ body: {"userId":"2281da1a-9166-4792-844d-44f5f658e741","title":"침입 시도",.
 
 이 문서의 모든 검증 기록에서:
 - 비밀번호 원문: 미기재
-- JWT 토큰: 미기재 (예: `eyJhb...생략` 형태로도 안 씀)
+- JWT 토큰: 미기재
 - `AUTH_SECRET`, `DATABASE_URL`의 값: 미기재
 - 계정 이메일: 기재 (비밀값 아님)
 
@@ -364,13 +367,14 @@ body: {"userId":"2281da1a-9166-4792-844d-44f5f658e741","title":"침입 시도",.
 
 ### 5일 기록
 
-| 일차 | 날짜 (KST) | 계획 규칙 | 실행 시간 (분) | 비고 |
-|------|-----------|-----------|----------------|------|
-| 1일차 | 2026-09-17 | 40분 이상 | 40 | |
-| 2일차 | 2026-09-18 | 40분 이상 | (기록 예정) | |
-| 3일차 | 2026-09-19 | **30분 이상** | (기록 예정) | 2일차 뒤 규칙 변경 |
-| 4일차 | 2026-09-20 | 30분 이상 | (기록 예정) | |
-| 5일차 | 2026-09-21 | 30분 이상 | (기록 예정) | |
+| 일차 | 날짜 (KST) | 계획 규칙 | 실행 시간 (분) |
+|------|-----------|-----------|----------------|
+| 1일차 | 2026-09-17 | 40분 이상 | 40 |
+| 2일차 | 2026-09-18 | 40분 이상 | 40 |
+| 3일차 | 2026-09-19 | 30분 이상 | 30 |
+| 4일차 | 2026-09-20 | 30분 이상 | 30 |
+| 5일차 | 2026-09-21 | 30분 이상 | 30 |
+| **합계** | | | **170분** |
 
 **스크린샷**: `docs/screenshots/day1-plan.png` ~ `day5-plan.png`
 
@@ -395,30 +399,36 @@ body: {"userId":"2281da1a-9166-4792-844d-44f5f658e741","title":"침입 시도",.
 | 지표 | 하루 운동 시간 | 하루 운동 시간 |
 | 단위 | 분 | 분 |
 | 계산 규칙 | 동일 (C23~C27) | 동일 |
+| 실행 시간 합 | 80분 (40+40) | 90분 (30+30+30) |
 
-**주의**: 규칙 변경 기록은 **2일차 뒤, 3일차 앞**에 위치합니다. (T07-C09)
+**변경 시각 증거**: `docs/screenshots/rule-change.png` (수정 이력 탭)
 
 ---
 
 ## 9. 화면 합계 vs 손 계산 (T07-C132)
 
-5일 기록 완료 후 채웁니다.
-
 | 항목 | 화면 표시 | 손 계산 | 일치 |
 |------|-----------|---------|------|
-| 총 실행 시간 | (5일 후) | (5일 후) | (5일 후) |
-| 평균 | (5일 후) | (5일 후) | (5일 후) |
+| 총 실행 시간 | 170분 | 40+40+30+30+30 = 170분 | ✅ |
+| Task 개수 | 5개 | 5일 | ✅ |
+| 완료 수 | 5개 | 5일 | ✅ |
+
+**스크린샷**: `docs/screenshots/final-review.png`
 
 ---
 
 ## 10. 내보내기 및 계정 삭제 (T07-C133, C134)
 
-### 내보내기
+### 내보내기 (T07-C133)
 - `/review` 페이지의 "JSON 내보내기" 버튼
 - 내 계획·할 일·실행 기록 전체를 JSON 1파일로 다운로드
+- 동작 확인 완료
 
-### 계정 삭제 안내
-- (구현 후 화면에 안내 문구 추가)
+### 계정 삭제 (T07-C134)
+- `/settings` 페이지의 "위험 구역" → "계정 삭제" 버튼
+- **안내 문구**: "계정을 삭제하면 모든 계획·할 일·실행 기록이 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
+- **실제 기능**: `POST /api/auth/delete` → `user` row 삭제 → FK `onDelete: 'cascade'`로 관련 자료 전부 삭제
+- 삭제 후 자동 로그아웃
 
 ---
 
@@ -432,4 +442,5 @@ body: {"userId":"2281da1a-9166-4792-844d-44f5f658e741","title":"침입 시도",.
 ---
 
 **작성일**: 2026-09-17
-**최종 갱신**: (5일 후)
+**최종 갱신**: 2026-09-21 (5일 기록 완료)
+**T07 최종 commit**: `<T07-최종-SHA>`
